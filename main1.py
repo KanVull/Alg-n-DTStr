@@ -1,3 +1,19 @@
+from enum import Enum
+
+class StateType(Enum):
+    S0 = 0      # Начальное состояние автомата (Ожидание первого символа)
+    NXTLIT = 1  # Ожидание следующей литеры идентификатора 
+    STOP = 2    # Конец текста (Завершиющее состояние)
+    ERR = 3     # Ошибка (Завершающее состояние)
+
+class Synterm(Enum):
+    LETTER = 0
+    DIGIT = 1
+    SPACE = 2
+    ENDFILE = 3
+    NOALP = 4
+
+
 class FSM_Model:
     '''
         Класс автомата, хранящий возможные состояния автомата,
@@ -5,20 +21,14 @@ class FSM_Model:
         функции переходов в состояния конечного автомата.
     '''
 
-    def __init__(self, input, output):
-        self.__input = input
-        self.__output = output
-        self.__currentState = self.StateType[0]
-
-    # S0 (0) - Начальное состояние автомата (Ожидание первого символа)
-    # NXTLIT (1) - Ожидание следующей литеры идентификатора 
-    # STOP (2) - Конец текста (Завершиющее состояние)
-    # ERR (3) - Ошибка (Завершающее состояние)
-    StateType = ['S0', 'NXTLIT', 'STOP', 'ERR']
-
     __input = None
     __output = None
     __currentState = None
+
+    def __init__(self, input, output):
+        self.__input = input
+        self.__output = output
+        self.__currentState = StateType.S0
 
     def Start(self):
         litera = Litera()
@@ -27,48 +37,48 @@ class FSM_Model:
         while True:
             litera.GetLit(self.__input)
 
-            if self.__currentState == self.StateType[0]:
+            if self.__currentState == StateType.S0:
                 self.Process_S0(litera, ident)
-            elif self.__currentState == self.StateType[1]:
+            elif self.__currentState == StateType.NXTLIT:
                 self.Process_NXTLIT(litera, ident)
-            elif self.__currentState in self.StateType[2]:
+            elif self.__currentState == StateType.STOP:
                 self.Process_STOP()
                 break
-            elif self.__currentState in self.StateType[3]:
+            elif self.__currentState == StateType.ERR:
                 self.Process_ERR()
                 break        
 
     def Process_S0(self, litera, ident):
         synterm = litera.GetSynterm()
         
-        if synterm == 'SPACE':
-            self.__currentState = self.StateType[0]
-        elif synterm == 'LETTER':
+        if synterm == Synterm.SPACE:
+            self.__currentState = StateType.S0
+        elif synterm == Synterm.LETTER:
             ident.LexFirst(litera)
-            self.__currentState = self.StateType[1]    
-        elif synterm == 'ENDFILE':
-            self.__currentState = self.StateType[2]
+            self.__currentState = StateType.NXTLIT  
+        elif synterm == Synterm.ENDFILE:
+            self.__currentState = StateType.STOP
         else:
-            self.__currentState = self.StateType[3]    
+            self.__currentState = StateType.ERR    
         
     def Process_NXTLIT(self, litera, ident):
         synterm = litera.GetSynterm()
         
-        if synterm == 'SPACE':
+        if synterm == Synterm.SPACE:
             ident.LexStop()
             ident.Print(self.__output)
             self.__output.write('\n')
-            self.__currentState = self.StateType[0]
-        elif synterm in ['LETTER', 'DIGIT']:
+            self.__currentState = StateType.S0
+        elif synterm in [Synterm.LETTER, Synterm.DIGIT]:
             ident.LexNext(litera)
-            self.__currentState = self.StateType[1]    
-        elif synterm == 'ENDFILE':
+            self.__currentState = StateType.NXTLIT    
+        elif synterm == Synterm.ENDFILE:
             ident.LexStop()
             ident.Print(self.__output)
             self.__output.write('\n')
-            self.__currentState = self.StateType[2]
+            self.__currentState = StateType.STOP
         else:
-            self.__currentState = self.StateType[3]  
+            self.__currentState = StateType.ERR  
 
     def Process_STOP(self):
         self.__output.write('Stopped successfully\n')
@@ -91,15 +101,15 @@ class Litera:
     def GetLit(self, input):
         self.value = input.read(1)
         if not self.value:
-            self.__synterm = 'ENDFILE'
+            self.__synterm = Synterm.ENDFILE
         elif self.value.isspace():
-            self.__synterm = 'SPACE'
+            self.__synterm = Synterm.SPACE
         elif self.value.isdigit():
-            self.__synterm = 'DIGIT'
+            self.__synterm = Synterm.DIGIT
         elif self.value.isalpha():
-            self.__synterm = 'LETTER'
+            self.__synterm = Synterm.LETTER
         else:
-            self.__synterm = 'NOALP'
+            self.__synterm = Synterm.NOALP
         return self.__synterm
 
     def GetSynterm(self):
