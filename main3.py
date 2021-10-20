@@ -13,24 +13,22 @@ class DoubleLinkedList:
         self.lenght = 0
         self.head = None
         self.tail = None
+        self.cursor = None
 
     def __createList(self, node: Node) -> None:
         # Добавить первый элемент в список
         self.head = node
         self.tail = node
-        self.head.next = node
         self.head.prev = node
         self.tail.next = node
-        self.tail.prev = node
+        self.cursor = node
         return None
 
-    def append(self, value: any) -> None:
+    def appendRight(self, value: any) -> None:
         node = Node(value)
         if self.head:
             # Если список уже не пустой
-            self.tail.prev = node
             self.head.next = node
-            node.next = self.tail
             node.prev = self.head
             self.head = node            
         else:
@@ -39,13 +37,11 @@ class DoubleLinkedList:
         self.lenght += 1
         return None
 
-    def appendleft(self, value: any) -> None:
+    def appendLeft(self, value: any) -> None:
         node = Node(value)
-        if self.head:
-            self.head.next = node
+        if self.tail:
             self.tail.prev = node
             node.next = self.tail
-            node.prev = self.head
             self.tail = node            
         else:
             self.__createList(node)  
@@ -53,50 +49,54 @@ class DoubleLinkedList:
         self.lenght += 1
         return None
 
-    def insert(self, value: any, index: int) -> None:
-        # Вставляет новую ячейку в список по указанному индексу
-        if index > self.lenght or index < 0:
-            raise IndexError('List index out of range')
-        if index == 0:
-            self.appendleft(value)
-            return None
-        elif index == self.lenght:
-            self.append(value)
+    def moveCursorTo(self, value: any) -> None:
+        # Перемещение курсора на ячейку со значением value
+        if self.lenght == 0:
+            raise Exception('Empty list, cursor is not defined')
+        node = self.tail
+        while True:
+            if node.data == value:
+                self.cursor = node
+                return None
+            node = node.next    
+            if node is None:
+                raise Exception('Item with value "value" is not founded')
+
+    def find(self, value: any) -> any:
+        # Поиск ячейки по значению
+        # Перемещает курсор на найдённую ячейку
+        # Если ячейка не была найдена, курсор не перемещается, функция возвращает None
+        try:
+            self.moveCursorTo(value)
+        except Exception as e:
+            return -1
+        return self.cursor.data        
+
+    def currentCursorData(self) -> any:
+        if self.cursor:
+            return self.cursor.data
+        else:
+            return None    
+
+    def insertAfterCursor(self, value: any) -> None:
+        # Вставляет новую ячейку в список после курсора
+        if self.cursor is None:
+            raise Exception('Empty list, cursor is not defined. Use append functions.')
+        if self.cursor.next is None:
+            self.appendRight(value)
+            self.cursor.next = self.head
             return None
 
-        newNode = Node(value)
-        node = self.tail
-        # Начинаем считать ячейки начиная с хвоста
-        currentIndex = 0
-        while currentIndex != index:
-            # Ищем ячейку с указанным индексом
-            node = node.next
-            currentIndex += 1
-        # Вставляем на его место новую ячейку    
-        newNode.next = node
-        newNode.prev = node.prev    
-        node.prev.next = newNode
-        node.prev = newNode
+        node = Node(value)
+        node.prev = self.cursor
+        node.next = self.cursor.next
+        self.cursor.next.prev = node
+        self.cursor.next = node
 
         self.lenght += 1
         return None
 
-    def index(self, value: any) -> int:
-        # Поиск элемента в ячейках списка
-        # Если соответствующего элемента не удаётся найти в списке возвращаем -1
-        if self.lenght == 0:
-            return -1
-        currentIndex = 0
-        node = self.tail
-        while currentIndex < self.lenght:
-            if node.data == value:
-                return currentIndex
-            currentIndex += 1
-            node = node.next    
-        else:
-            return -1        
-
-    def pop(self) -> object:
+    def popRight(self) -> object:
         if self.lenght == 0:
             # Нечего удалять, список пустой
             return None
@@ -106,16 +106,18 @@ class DoubleLinkedList:
             # Затираем информацию о голове и хвосте списка
             self.head = None
             self.tail = None
+            self.cursor = None
             self.lenght = 0
         else:
-            # Новая голова - это prev предыдущей головы
+            if self.cursor.next is None:
+                self.cursor = self.cursor.prev
+                self.cursor.next = None
             self.head = self.head.prev
-            self.head.next = self.tail
-            self.tail.prev = self.head
+            self.head.next = None
             self.lenght -= 1
         return data
 
-    def popleft(self) -> object:
+    def popLeft(self) -> object:
         if self.lenght == 0:
             return None
 
@@ -123,36 +125,59 @@ class DoubleLinkedList:
         if self.lenght == 1:
             self.head = None
             self.tail = None
+            self.cursor = None
             self.lenght = 0
         else:
-            self.tail = self.tail.next
-            self.tail.prev = self.head
-            self.head.next = self.tail
+            if self.cursor.prev is None:
+                self.cursor = self.cursor.next
+            self.tail = self.cursor
             self.lenght -= 1
         return data    
 
-    def remove(self, index: int) -> None:
-        # Удаляет ячейку из списка по указанному индексу
-        if index >= self.lenght or index < 0:
-            raise IndexError('List index out of range')
-        if index == 0:
-            self.popleft()
+    def removeCursorItem(self) -> None:
+        # Передвигает курсор на ячейку после текущего курсора
+        # Если курсор это последний жлемент в списке, то перемещает на элемент после
+        # Если курсор это единственный элемент, происходит очистка списка
+
+        if self.cursor is None:
             return None
-        elif index == self.lenght - 1:
-            self.pop()
+
+        if self.cursor.prev is None:
+            self.cursor = self.tail.next
+            self.popLeft()
             return None
-        currentIndex = 0
-        node = self.tail
-        while currentIndex < index:
-            node = node.next
-            currentIndex += 1
+        elif self.cursor.next is None:
+            self.cursor = self.head.prev
+            self.popRight()
+            return None
+
+        node = self.cursor
         node.next.prev = node.prev
         node.prev.next = node.next
+        self.cursor = node.next
+
+        self.lenght -= 1
         del node
         return None        
 
     def count(self) -> int:
         return self.lenght
+
+    def next(self) -> None:
+        if self.cursor is None:
+            raise Exception('Empty list, cursor is not defined')
+        if self.cursor.next is None:
+            raise Exception('Cursor over the range of the list')
+        self.cursor = self.cursor.next
+        return None
+
+    def previous(self) -> None:
+        if self.cursor is None:
+            raise Exception('Empty list, cursor is not defined')
+        if self.cursor.prev is None:
+            raise Exception('Cursor over the range of the list')
+        self.cursor = self.cursor.prev
+        return None        
 
     def __str__(self):
         # Отображение списка, понятное человеку
@@ -162,9 +187,11 @@ class DoubleLinkedList:
 
         node = self.tail
         while True:
+            if self.cursor == node:
+                s += 'cursor: '
             s += f'[{node.data}]'
             node = node.next
-            if node == self.tail:
+            if node is None:
                 break
             s += ' -> '
         return s    
@@ -177,80 +204,97 @@ class DoubleLinkedList:
         while True:
             yield node
             node = node.next
-            if node is self.tail:
-                break    
+            if node is None:
+                break   
 
-    def __getitem__(self, index):
-        # Получить значение ячейки по индексу 
-        # Работает и по обратному счёту (-1, -2 ...)
-        if index < 0:
-            if index < -self.lenght:
-                raise IndexError('List index out of range')   
-            node = self.head
-            currentIndex = -1
-            while currentIndex > index:
-                node = node.prev
-                currentIndex -= 1
-            return node.data
-        else:
-            if index >= self.lenght:
-                raise IndexError('List index out of range')
-            node = self.tail
-            currentIndex = 0
-            while currentIndex < index:
-                node = node.next
-                currentIndex += 1
-            return node.data                         
+if __name__ == '__main__':
 
-    def __setitem__(self, index, value):
-        if index < 0:
-            index = self.lenght + index
-        if index >= self.lenght or index < 0:
-            raise IndexError('List index out of range')    
-        currentIndex = 0
-        node = self.tail
-        while currentIndex < index:
-            node = node.next
-            currentIndex += 1
-        node.data = value
-        return None
+    DLL = DoubleLinkedList()
+    DLL.appendLeft((43,53,6))
+    DLL.appendLeft({'10': 1, '20': 2})
+    DLL.appendRight('jij')
+    DLL.appendRight(10)
+    print(DLL)
 
+    print(f'DLL find jij: ', DLL.find('jij'))
+    print(f'DLL count: {DLL.count()}')
 
-DLL = DoubleLinkedList()
-DLL.append((43,53,6))
-DLL.append({'10': 1, '20': 2})
-DLL.appendleft('jij')
-DLL.appendleft(10)
-DLL.insert('abc', 4)
-DLL[4] = 'cba'
-print(DLL)
+    print(DLL)
+    DLL.next()
+    print('Cursor moved next')
+    print(DLL)
+    DLL.previous()
+    print('Cursor moved prev')
+    print(DLL)
+    DLL.previous()
+    print('Cursor moved prev')
+    print(DLL)
+    DLL.insertAfterCursor(10000)
+    print('10000 inserted after cursor')
+    print(DLL)
+    DLL.removeCursorItem()
+    print('Cursor item removed')
+    print(DLL)
+    print(f'DLL popRight: {DLL.popRight()}')
+    print(DLL)
+    print(f'DLL popRight: {DLL.popRight()}')
+    print(DLL)
+    print(f'DLL popLeft: {DLL.popLeft()}')
+    print(DLL)
+    print(f'DLL popLeft: {DLL.popLeft()}')
+    print(DLL)
 
-print(f'DLL find cba: ', DLL.index('cba'))
-print(f'DLL count: {DLL.count()}')
-print(f'DLL[-1]: {DLL[-1]}')
+    print(f'DLL count: {DLL.count()}')
 
-DLL.remove(4)
-print('DLL removed index 4')
-print(DLL)
-print(f'DLL pop: {DLL.pop()}')
-print(f'DLL pop: {DLL.pop()}')
-print(f'DLL popleft: {DLL.popleft()}')
-print(f'DLL popleft: {DLL.popleft()}')
+    DLL.appendLeft((43,53,6))
+    DLL.appendLeft({'10': 1, '20': 2})
+    DLL.appendRight('jij')
+    print(DLL)
+    print('DLL cursor right now: ', DLL.currentCursorData())
 
-print(f'DLL count: {DLL.count()}')
+    # iteration example
+    for node in DLL:
+        print(node)
 
 '''
 Output:
 
-DLL: [10] -> [jij] -> [(43, 53, 6)] -> [{'10': 1, '20': 2}] -> [cba]
-DLL find cba:  4
-DLL count: 5
-DLL[-1]: cba
-DLL removed index 4
-DLL: [10] -> [jij] -> [(43, 53, 6)] -> [{'10': 1, '20': 2}]
-DLL pop: {'10': 1, '20': 2}
-DLL pop: (43, 53, 6)
-DLL popleft: 10
-DLL popleft: jij
+DLL: [{'10': 1, '20': 2}] -> cursor: [(43, 53, 6)] -> [jij] -> [10]
+
+DLL find jij:  jij
+DLL count: 4
+DLL: [{'10': 1, '20': 2}] -> [(43, 53, 6)] -> cursor: [jij] -> [10]
+
+Cursor moved next
+DLL: [{'10': 1, '20': 2}] -> [(43, 53, 6)] -> [jij] -> cursor: [10]
+
+Cursor moved prev
+DLL: [{'10': 1, '20': 2}] -> [(43, 53, 6)] -> cursor: [jij] -> [10]
+
+Cursor moved prev
+DLL: [{'10': 1, '20': 2}] -> cursor: [(43, 53, 6)] -> [jij] -> [10]
+
+10000 inserted after cursor
+DLL: [{'10': 1, '20': 2}] -> cursor: [(43, 53, 6)] -> [10000] -> [jij] -> [10]
+Cursor item removed
+DLL: [{'10': 1, '20': 2}] -> cursor: [10000] -> [jij] -> [10]
+
+DLL popRight: 10
+DLL: [{'10': 1, '20': 2}] -> cursor: [10000] -> [jij]
+DLL popRight: jij
+DLL: [{'10': 1, '20': 2}] -> cursor: [10000]
+DLL popLeft: {'10': 1, '20': 2}
+
+DLL: cursor: [10000]
+DLL popLeft: 10000
+Empty DLL
 DLL count: 0
+
+DLL: [{'10': 1, '20': 2}] -> cursor: [(43, 53, 6)] -> [jij]
+DLL cursor right now:  (43, 53, 6)
+
+{'10': 1, '20': 2}
+(43, 53, 6)
+jij
+
 '''
