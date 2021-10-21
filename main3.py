@@ -11,24 +11,24 @@ class Node:
 class DoubleLinkedList:
     def __init__(self) -> None:
         self.lenght = 0
-        self.head = None
         self.tail = None
+        self.head = None
         self.cursor = None
 
     def __createList(self, node: Node) -> None:
         # Добавить первый элемент в список
-        self.head = node
         self.tail = node
+        self.head = node
         self.cursor = node
         return None
 
     def appendRight(self, value: any) -> None:
         node = Node(value)
-        if self.head:
+        if self.tail:
             # Если список уже не пустой
-            self.head.next = node
-            node.prev = self.head
-            self.head = node            
+            self.tail.next = node
+            node.prev = self.tail
+            self.tail = node            
         else:
             self.__createList(node)  
 
@@ -37,10 +37,10 @@ class DoubleLinkedList:
 
     def appendLeft(self, value: any) -> None:
         node = Node(value)
-        if self.tail:
-            self.tail.prev = node
-            node.next = self.tail
-            self.tail = node            
+        if self.head:
+            self.head.prev = node
+            node.next = self.head
+            self.head = node            
         else:
             self.__createList(node)  
 
@@ -51,7 +51,7 @@ class DoubleLinkedList:
         # Перемещение курсора на ячейку со значением value
         if self.lenght == 0:
             raise Exception('Empty list, cursor is not defined')
-        node = self.tail
+        node = self.head
         while True:
             if node.data == value:
                 self.cursor = node
@@ -82,7 +82,7 @@ class DoubleLinkedList:
             raise Exception('Empty list, cursor is not defined. Use append functions.')
         if self.cursor.next is None:
             self.appendRight(value)
-            self.cursor.next = self.head
+            self.cursor.next = self.tail
             return None
 
         node = Node(value)
@@ -99,19 +99,19 @@ class DoubleLinkedList:
             # Нечего удалять, список пустой
             return None
 
-        data = self.head.data
+        data = self.tail.data
         if self.lenght == 1:
             # Затираем информацию о голове и хвосте списка
-            self.head = None
             self.tail = None
+            self.head = None
             self.cursor = None
             self.lenght = 0
         else:
             if self.cursor.next is None:
                 self.cursor = self.cursor.prev
                 self.cursor.next = None
-            self.head = self.head.prev
-            self.head.next = None
+            self.tail = self.tail.prev
+            self.tail.next = None
             self.lenght -= 1
         return data
 
@@ -119,16 +119,16 @@ class DoubleLinkedList:
         if self.lenght == 0:
             return None
 
-        data = self.tail.data
+        data = self.head.data
         if self.lenght == 1:
-            self.head = None
             self.tail = None
+            self.head = None
             self.cursor = None
             self.lenght = 0
         else:
             if self.cursor.prev is None:
                 self.cursor = self.cursor.next
-            self.tail = self.cursor
+            self.head = self.cursor
             self.lenght -= 1
         return data    
 
@@ -141,11 +141,11 @@ class DoubleLinkedList:
             return None
 
         if self.cursor.prev is None:
-            self.cursor = self.tail.next
+            self.cursor = self.head.next
             self.popLeft()
             return None
         elif self.cursor.next is None:
-            self.cursor = self.head.prev
+            self.cursor = self.tail.prev
             self.popRight()
             return None
 
@@ -183,7 +183,7 @@ class DoubleLinkedList:
         if self.lenght == 0:
             return 'Empty DLL'
 
-        node = self.tail
+        node = self.head
         while True:
             if self.cursor == node:
                 s += 'cursor: '
@@ -198,7 +198,7 @@ class DoubleLinkedList:
         # Переопределение метода итерирования
         if self.lenght == 0:
             return None
-        node = self.tail
+        node = self.head
         while True:
             yield node
             node = node.next
