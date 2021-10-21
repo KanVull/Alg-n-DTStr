@@ -19,8 +19,6 @@ class DoubleLinkedList:
         # Добавить первый элемент в список
         self.head = node
         self.tail = node
-        self.head.prev = node
-        self.tail.next = node
         self.cursor = node
         return None
 
