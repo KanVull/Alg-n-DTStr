@@ -19,7 +19,7 @@ class Tree():
     def __init__(self):
         self.root = None
 
-    def deleteNode(self, node):
+    def deleteSubtreeNode(self, node):
         if node is None:
             return None
         def _deleteNode(node):
@@ -39,6 +39,33 @@ class Tree():
         else:
             _deleteNode(node)
             self.root = None 
+
+    def deleteNode(self, node):
+        if node is None:
+            return None
+        if not node.hasLeftChild() or not node.hasRightChild():
+            removed_node = node
+        else:
+            removed_node = node.rightChild
+            while removed_node.hasLeftChild(): removed_node = removed_node.leftChild
+        if removed_node.hasLeftChild():
+            node_to_replace = removed_node.leftChild
+        else:
+            node_to_replace = removed_node.rightChild
+        if node_to_replace is not None:
+            node_to_replace.parent = removed_node.parent
+        if removed_node.parent is not None:
+            if removed_node is removed_node.parent.leftChild:
+                removed_node.parent.leftChild = node_to_replace
+            else:
+                removed_node.parent.rightChild = node_to_replace
+        else:
+            self.root = node_to_replace
+        if removed_node is not node:
+            node.value = removed_node.value
+        del removed_node    
+
+
 
     def find(self, value):
         curr_node = self.root
@@ -119,52 +146,70 @@ if __name__ == '__main__':
     print(message)
     node, message = tree.find(75)
     print(message)
+    tree.deleteSubtreeNode(node)
+    tree.showTree()
+    node, message = tree.find(50)
+    print(message)
     tree.deleteNode(node)
+    tree.pasteValue(50)
+    _, message = tree.find(50)
+    print(message)
     tree.showTree()
 
 
 ''' Output
     Empty Tree
-    Already exists!
-    50
-    | - 10
-    | - | - 5
-    | - | - | - 0
-    | - | - 15
-    | - | - | - 25
-    | - | - | - | - 20
-    | - | - | - | - 45
-    | - | - | - | - | - 30
-    | - | - | - | - | - | - 40
-    | - | - | - | - | - | - | - 35
-    | - 95
-    | - | - 60
-    | - | - | - 55
-    | - | - | - 75
-    | - | - | - | - 70
-    | - | - | - | - | - 65
-    | - | - | - | - 85
-    | - | - | - | - | - 80
-    | - | - | - | - | - 90
-    | - | - 100
-        (trying find 6)
-    Not found 
-        (success find 75)
-    50 -> 95 -> 60 -> 75 
-        (75 - deleted)
-    50
-    | - 10
-    | - | - 5
-    | - | - | - 0
-    | - | - 15
-    | - | - | - 25
-    | - | - | - | - 20
-    | - | - | - | - 45
-    | - | - | - | - | - 30
-    | - | - | - | - | - | - 40
-    | - | - | - | - | - | - | - 35
-    | - 95
-    | - | - 60
-    | - | - | - 55
-    | - | - 100
+Already exists!
+50
+| - 30
+| - | - 15
+| - | - | - 0
+| - | - | - | - 5
+| - | - | - | - | - 10
+| - | - | - 20
+| - | - | - | - 25
+| - | - 40
+| - | - | - 35
+| - | - | - 45
+| - 100
+| - | - 75
+| - | - | - 60
+| - | - | - | - 55
+| - | - | - | - 65
+| - | - | - | - | - 70
+| - | - | - 95
+| - | - | - | - 90
+| - | - | - | - | - 85
+| - | - | - | - | - | - 80
+Not found
+50 -> 100 -> 75 (found 75)
+(deleted 75)
+50
+| - 30
+| - | - 15
+| - | - | - 0
+| - | - | - | - 5
+| - | - | - | - | - 10
+| - | - | - 20
+| - | - | - | - 25
+| - | - 40
+| - | - | - 35
+| - | - | - 45
+| - 100
+50 (found 50)
+(deleted 50)
+(added 50)
+100 -> 30 -> 40 -> 45 -> 50 (found 50)
+100
+| - 30
+| - | - 15
+| - | - | - 0
+| - | - | - | - 5
+| - | - | - | - | - 10
+| - | - | - 20
+| - | - | - | - 25
+| - | - 40
+| - | - | - 35
+| - | - | - 45
+| - | - | - | - 50
 '''    
